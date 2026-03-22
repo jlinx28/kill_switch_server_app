@@ -74,7 +74,7 @@ CREATE TABLE devices (
 
 ### Deploy
 
-### TODO: Replace <your-server-ip> with your actual VPS IP
+# TODO: Replace <your-server-ip> with your actual VPS IP
 
 ```bash
 
@@ -166,7 +166,7 @@ import 'package:uuid/uuid.dart';
 import '../domain/device_status.dart';
 
 class KillSwitchService {
-   // TODO: Replace <YOUR_DROPLET_IP> with your actual VPS IP
+   // TODO: Replace <YOUR_SERVER_IP> with your actual VPS IP
   static const _baseUrl = 'http://<YOUR_SERVER_IP>:8081';
   static const _timeout = Duration(seconds: 5);
 
