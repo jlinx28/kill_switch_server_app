@@ -74,10 +74,7 @@ CREATE TABLE devices (
 
 ### Deploy
 
-### TODO: Replace <your-server-ip> with your actual VPS IP
-
 ```bash
-
 scp -r kill_switch_server/ root@your-server-ip:/root/
 ssh root@your-server-ip
 cd /root/kill_switch_server
@@ -153,6 +150,94 @@ dependencies:
 
 ## Code Snippets
 
+### Server — `main.py`
+
+```python
+import os
+import sqlite3
+import datetime
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+DB_FILE = os.getenv("DB_FILE", "devices.db")
+ADMIN_ROUTE = os.getenv("ADMIN_ROUTE", "<YOUR_ADMIN_ROUTE>")
+
+
+def init_db():
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS devices (
+                device_id TEXT PRIMARY KEY,
+                model TEXT,
+                status INTEGER DEFAULT 1,
+                last_seen TIMESTAMP,
+                tag TEXT DEFAULT ''
+            )
+        """)
+        try:
+            conn.execute("ALTER TABLE devices ADD COLUMN tag TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/check/{device_id}")
+async def check_device(device_id: str, model: str = "Unknown Device"):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT status FROM devices WHERE device_id = ?", (device_id,))
+        result = cursor.fetchone()
+
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        if result is None:
+            cursor.execute(
+                "INSERT INTO devices (device_id, model, last_seen) VALUES (?, ?, ?)",
+                (device_id, model, now),
+            )
+            conn.commit()
+            return {"access": True}
+
+        cursor.execute(
+            "UPDATE devices SET last_seen = ?, model = ? WHERE device_id = ?",
+            (now, model, device_id),
+        )
+        conn.commit()
+        return {"access": bool(result[0])}
+
+
+@app.post(f"/{ADMIN_ROUTE}/tag/{{device_id}}")
+async def tag_device(device_id: str, tag: str = Form("")):
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute(
+            "UPDATE devices SET tag = ? WHERE device_id = ?",
+            (tag.strip(), device_id),
+        )
+        conn.commit()
+    return RedirectResponse(url=f"/{ADMIN_ROUTE}", status_code=303)
+
+
+@app.get(f"/{ADMIN_ROUTE}/toggle/{{device_id}}")
+async def toggle_device(device_id: str):
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute(
+            "UPDATE devices SET status = 1 - status WHERE device_id = ?",
+            (device_id,),
+        )
+        conn.commit()
+    return RedirectResponse(url=f"/{ADMIN_ROUTE}")
+```
+
 > The admin dashboard HTML is generated inline in `main.py` — see the full file for the complete template.
 
 ### Flutter — `kill_switch_service.dart`
@@ -166,7 +251,7 @@ import 'package:uuid/uuid.dart';
 import '../domain/device_status.dart';
 
 class KillSwitchService {
-   // TODO: Replace <YOUR_DROPLET_IP> with your actual VPS IP
+   // TODO: Replace <YOUR_DROPLET_IP> with your actual Digital Ocean droplet IP
   static const _baseUrl = 'http://<YOUR_SERVER_IP>:8081';
   static const _timeout = Duration(seconds: 5);
 
