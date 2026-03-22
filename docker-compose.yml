@@ -1,0 +1,12 @@
+services:
+  kill-switch:
+    build: .
+    ports:
+      - "8081:80"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DB_FILE=/app/data/devices.db
+      - ADMIN_ROUTE=panel_x7k9m2
+      - TZ=Asia/Manila
+    restart: unless-stopped
