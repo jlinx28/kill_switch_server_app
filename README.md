@@ -1,10 +1,10 @@
 # Kill Switch Server
 
-Remote device management server for the Dynamic POS app. Allows you to remotely block or unblock app access on registered devices via a web dashboard.
+Remote device management server for the Flutter(Andoid/IOS) App. Allows you to remotely block or unblock app access on registered devices via a web dashboard.
 
 ## How It Works
 
-1. The POS app checks in with the server on every launch, sending its device ID and model
+1. The Flutter(Andoid/IOS) checks in with the server on every launch, sending its device ID and model
 2. New devices are auto-registered and allowed by default
 3. The admin dashboard lets you view all devices, tag them with owner names, and block/unblock access
 4. Blocked devices see an "Access Revoked" screen and cannot use the app
@@ -107,7 +107,7 @@ Environment variables (set in `docker-compose.yml`):
 
 ## Flutter App Integration
 
-The kill switch client lives in the POS app at `lib/features/kill_switch/`.
+The kill switch client lives in the Flutter(Andoid/IOS) app at `lib/features/kill_switch/`.
 
 ### Setup
 
