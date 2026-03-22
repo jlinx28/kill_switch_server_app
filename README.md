@@ -74,7 +74,7 @@ CREATE TABLE devices (
 
 ### Deploy
 
-# TODO: Replace <your-server-ip> with your actual VPS IP
+- TODO: Replace <your-server-ip> with your actual VPS IP
 
 ```bash
 
