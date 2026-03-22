@@ -72,6 +72,52 @@ Environment variables (set in `docker-compose.yml`):
 | `ADMIN_ROUTE` | `panel_x7k9m2` | Obfuscated admin dashboard URL path |
 | `TZ` | `Asia/Manila` | Timezone for timestamps |
 
+## Flutter App Integration
+
+The kill switch client lives in the POS app at `lib/features/kill_switch/`.
+
+### Setup
+
+1. **Set the server URL** in `lib/features/kill_switch/data/kill_switch_service.dart`:
+
+```dart
+static const _baseUrl = 'http://<YOUR_SERVER_IP>:8081';
+```
+
+2. **Required dependencies** in `pubspec.yaml`:
+
+```yaml
+dependencies:
+  http: ^1.2.0
+  flutter_secure_storage: ^9.2.4
+  uuid: ^4.5.1
+```
+
+### How It Works in the App
+
+- On launch, the app navigates to `/startup` (configured in `lib/app/router.dart`)
+- `StartupScreen` calls `KillSwitchService.checkAccess()` which sends a `GET /check/{device_id}?model=...` request
+- If access is granted → navigates to the main app (`/`)
+- If access is blocked → navigates to `/blocked` (shows "Access Revoked" screen)
+- Device ID is a UUID v4, generated once and stored in `FlutterSecureStorage`
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/features/kill_switch/data/kill_switch_service.dart` | Server communication, device ID management |
+| `lib/features/kill_switch/domain/device_status.dart` | Response model (`{"access": true/false}`) |
+| `lib/features/kill_switch/presentation/screens/startup_screen.dart` | Launch check screen |
+| `lib/features/kill_switch/presentation/screens/blocked_screen.dart` | Access denied screen |
+| `lib/features/kill_switch/presentation/providers/kill_switch_providers.dart` | Riverpod providers |
+
+### Behavior
+
+- **Fail-open**: If the server is unreachable (offline, timeout), the app allows access using the last cached status
+- **Timeout**: 5 seconds — if the server doesn't respond, the app proceeds
+- **Auto-register**: New devices are automatically registered on first launch with status `ACTIVE`
+- **Persistent ID**: Device ID persists across app reinstalls via secure storage (except on emulators where secure storage may be unavailable)
+
 ## Local Development
 
 ```bash
