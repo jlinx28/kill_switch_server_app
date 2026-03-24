@@ -100,7 +100,10 @@ async def admin_panel():
                 <td>{model}</td>
                 <td><span class="status {status_class}">{status_text}</span></td>
                 <td>{last_seen}</td>
-                <td><a href="/{ADMIN_ROUTE}/toggle/{device_id}"><button class="{btn_class}">{btn_text}</button></a></td>
+                <td>
+                    <a href="/{ADMIN_ROUTE}/toggle/{device_id}"><button class="{btn_class}">{btn_text}</button></a>
+                    <a href="/{ADMIN_ROUTE}/delete/{device_id}" onclick="return confirm('Delete this device?')"><button class="btn-delete">✕</button></a>
+                </td>
             </tr>
         """
 
@@ -127,6 +130,8 @@ async def admin_panel():
             .btn-edit:hover {{ color: #333; }}
             .btn-save {{ background: #66bb6a; color: #fff; padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }}
             .btn-cancel {{ background: #eee; color: #666; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }}
+            .btn-delete {{ background: #888; color: #fff; padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-left: 4px; }}
+            .btn-delete:hover {{ background: #555; }}
         </style>
     </head>
     <body>
@@ -157,6 +162,14 @@ async def tag_device(device_id: str, tag: str = Form("")):
         )
         conn.commit()
     return RedirectResponse(url=f"/{ADMIN_ROUTE}", status_code=303)
+
+
+@app.get(f"/{ADMIN_ROUTE}/delete/{{device_id}}")
+async def delete_device(device_id: str):
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute("DELETE FROM devices WHERE device_id = ?", (device_id,))
+        conn.commit()
+    return RedirectResponse(url=f"/{ADMIN_ROUTE}")
 
 
 @app.get(f"/{ADMIN_ROUTE}/toggle/{{device_id}}")
